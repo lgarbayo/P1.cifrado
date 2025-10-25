@@ -8,24 +8,13 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class DesempaquetarFactura {
 
-    private static final String BLOQUE_FACTURA_CIFRADA = "FACTURA_CIFRADA";
-    private static final String BLOQUE_CLAVE_CIFRADA = "CLAVE_CIFRADA";
-    private static final String BLOQUE_FIRMA_EMPRESA = "FIRMA_EMPRESA";
-    private static final String BLOQUE_SELLO_TIEMPO = "SELLO_TIEMPO";
-    private static final String BLOQUE_FIRMA_AUTORIDAD = "FIRMA_AUTORIDAD";
-
-    private static final String ALGORITMO_FIRMA = "SHA512withRSA";
-    private static final String ALGORITMO_CLAVE_SIMETRICA = "AES"; // Se asume AES para el cifrado de la factura
-    private static final String MODO_CIFRADO_SIMETRICO = "AES/ECB/PKCS5Padding"; // Asumimos un modo de cifrado simple
-    private static final String PROVIDER = "BC";
-    // -----------------------------------------------------------------
-
-    public static void main(String[] args) throws Exception {
+     public static void main(String[] args) throws Exception {
         if (args.length != 5) {
             mensajeAyuda();
             System.exit(1);
@@ -44,14 +33,20 @@ public class DesempaquetarFactura {
             Paquete paquete = new Paquete(nombrePaquete);
 
             // Cargar Contenidos y Claves
-            byte[] facturaCifrada = paquete.getContenidoBloque(BLOQUE_FACTURA_CIFRADA);
-            byte[] claveCifrada = paquete.getContenidoBloque(BLOQUE_CLAVE_CIFRADA);
-            byte[] firmaEmpresa = paquete.getContenidoBloque(BLOQUE_FIRMA_EMPRESA);
-            byte[] selloTiempo = paquete.getContenidoBloque(BLOQUE_SELLO_TIEMPO);
-            byte[] firmaAutoridad = paquete.getContenidoBloque(BLOQUE_FIRMA_AUTORIDAD);
+            byte[] facturaCifrada = paquete.getContenidoBloque("FACTURA_CIFRADA");
+            byte[] claveCifrada = paquete.getContenidoBloque("CLAVE_CIFRADA");
+            byte[] firmaEmpresa = paquete.getContenidoBloque("FIRMA_EMPRESA");
+            byte[] selloTiempo = paquete.getContenidoBloque("SELLO_TIEMPO");
+            byte[] firmaAutoridad = paquete.getContenidoBloque("FIRMA_AUTORIDAD");
+            byte[] iv = paquete.getContenidoBloque("VECTOR_INICIALIZACION");
 
             if (facturaCifrada == null || claveCifrada == null || firmaEmpresa == null || selloTiempo == null || firmaAutoridad == null) {
                 System.err.println("¡ERROR CRÍTICO! El paquete está incompleto. Faltan bloques de Empresa y/o Autoridad.");
+                System.exit(1);
+            }
+
+            if (iv == null) {
+                System.err.println("¡ERROR CRÍTICO! Falta el vector de inicialización (VECTOR_INICIALIZACION) en el paquete.");
                 System.exit(1);
             }
 
@@ -69,7 +64,7 @@ public class DesempaquetarFactura {
             System.out.println("1. Verificando Sello de la Autoridad de Sellado...");
             byte[] mensajeAFirmarAutoridad = concatenarBytes(facturaCifrada, claveCifrada, selloTiempo);
 
-            Signature verificadorAutoridad = Signature.getInstance(ALGORITMO_FIRMA, PROVIDER);
+            Signature verificadorAutoridad = Signature.getInstance("SHA512withRSA", "BC");
             verificadorAutoridad.initVerify(clavePublicaAutoridad);
             verificadorAutoridad.update(mensajeAFirmarAutoridad);
 
@@ -86,7 +81,7 @@ public class DesempaquetarFactura {
             System.out.println("\n2. Verificando Firma de la Empresa...");
             byte[] mensajeFirmadoEmpresa = concatenarBytes(facturaCifrada, claveCifrada);
 
-            Signature verificadorEmpresa = Signature.getInstance(ALGORITMO_FIRMA, PROVIDER);
+            Signature verificadorEmpresa = Signature.getInstance("SHA512withRSA", "BC");
             verificadorEmpresa.initVerify(clavePublicaEmpresa);
             verificadorEmpresa.update(mensajeFirmadoEmpresa);
 
@@ -103,11 +98,11 @@ public class DesempaquetarFactura {
             if (todoCorrecto) {
                 System.out.println("\n3. Descifrando Factura...");
 
-                // Descifrar la clave simétrica con la clave privada de Hacienda (RSA)
+                // Descifrar la clave simétrica con la clave privada de Hacienda (RSA/OAEP SHA-256)
                 SecretKey claveSimetrica = descifrarClaveSimetrica(claveCifrada, clavePrivadaHacienda);
 
-                // Descifrar la Factura con la clave simétrica (AES)
-                facturaClaro = descifrarFactura(facturaCifrada, claveSimetrica);
+                // Descifrar la Factura con la clave simétrica (AES/CBC) usando el IV guardado
+                facturaClaro = descifrarFactura(facturaCifrada, claveSimetrica, iv);
 
                 // Escritura y Finalización
                 Files.write(Paths.get(ficheroJsonSalida), facturaClaro.getBytes("UTF-8"));
@@ -132,25 +127,22 @@ public class DesempaquetarFactura {
      * Descifra la clave simétrica (cifrada con RSA) para obtener el objeto SecretKey.
      */
     private static SecretKey descifrarClaveSimetrica(byte[] claveCifrada, PrivateKey krHacienda) throws Exception {
-        Cipher descifradorRSA = Cipher.getInstance("RSA/ECB/PKCS1Padding", PROVIDER);
-        descifradorRSA.init(Cipher.UNWRAP_MODE, krHacienda);
+        // Usamos la misma transformación que en EmpaquetarFactura para descifrar la clave AES
+        Cipher descifradorRSA = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding", "BC");
+        descifradorRSA.init(Cipher.DECRYPT_MODE, krHacienda);
 
-        // Asumimos que la clave simétrica es AES de 128 bits (16 bytes)
-        Key claveDesenvuelta = descifradorRSA.unwrap(claveCifrada, ALGORITMO_CLAVE_SIMETRICA, Cipher.SECRET_KEY);
-
-        if (claveDesenvuelta instanceof SecretKey) {
-            return (SecretKey) claveDesenvuelta;
-        } else {
-            throw new GeneralSecurityException("Clave simétrica descifrada no es un objeto SecretKey válido.");
-        }
+        byte[] claveDesencriptada = descifradorRSA.doFinal(claveCifrada);
+        // Construir objeto SecretKey a partir de los bytes descifrados
+        return new SecretKeySpec(claveDesencriptada, "AES");
     }
 
     /**
      * Descifra la Factura (cifrada con AES) usando la clave simétrica.
      */
-    private static String descifrarFactura(byte[] facturaCifrada, SecretKey claveSimetrica) throws Exception {
-        Cipher descifradorAES = Cipher.getInstance(MODO_CIFRADO_SIMETRICO, PROVIDER);
-        descifradorAES.init(Cipher.DECRYPT_MODE, claveSimetrica);
+    private static String descifrarFactura(byte[] facturaCifrada, SecretKey claveSimetrica, byte[] iv) throws Exception {
+        Cipher descifradorAES = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
+        IvParameterSpec ivSpec = new IvParameterSpec(iv);
+        descifradorAES.init(Cipher.DECRYPT_MODE, claveSimetrica, ivSpec);
 
         byte[] facturaBytes = descifradorAES.doFinal(facturaCifrada);
         return new String(facturaBytes, "UTF-8");
@@ -173,7 +165,7 @@ public class DesempaquetarFactura {
     public static PublicKey cargarClavePublica(String ficheroClave) throws Exception {
         byte[] keyBytes = Files.readAllBytes(Paths.get(ficheroClave)); // Leer el contenido del archivo binario
         X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
-        KeyFactory kf = KeyFactory.getInstance("RSA", PROVIDER);
+        KeyFactory kf = KeyFactory.getInstance("RSA", "BC");
         return kf.generatePublic(spec);
     }
 
@@ -183,7 +175,7 @@ public class DesempaquetarFactura {
     public static PrivateKey cargarClavePrivada(String ficheroClave) throws Exception {
         byte[] keyBytes = Files.readAllBytes(Paths.get(ficheroClave)); // Leer el contenido del archivo binario
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
-        KeyFactory kf = KeyFactory.getInstance("RSA", PROVIDER);
+        KeyFactory kf = KeyFactory.getInstance("RSA", "BC");
         return kf.generatePrivate(spec);
     }
 

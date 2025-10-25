@@ -4,6 +4,8 @@ import java.nio.file.*;
 import java.security.*;
 import java.security.spec.*;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 public class EmpaquetarFactura {
 
     /*
@@ -26,15 +28,18 @@ public class EmpaquetarFactura {
         }
 
         Path factura = Paths.get(args[0]);
-        Path paquete = Paths.get(args[1]);
+        Path nombrePaquete = Paths.get(args[1]);
         Path haciendaPublicKey = Paths.get(args[2]);
         Path empresaPrivateKey = Paths.get(args[3]);
+
+        // Registrar BouncyCastle como provider
+        Security.addProvider(new BouncyCastleProvider());
 
         // Paso 1: Leer la factura JSON original
         byte[] facturaBytes = Files.readAllBytes(factura);
 
         // Paso 2: Generar clave simétrica AES y vector de inicialización (IV)
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES", "BC");
         keyGen.init(128); // por compatibilidad con cualquier instalación de Java, 128 / 16 -> 16 bytes
         SecretKey aesKey = keyGen.generateKey(); // genera clave binaria de 16 bytes que se usará en el cifrado AES
         byte[] iv = new byte[16]; // iv -> vector de inicialización
@@ -43,7 +48,7 @@ public class EmpaquetarFactura {
         IvParameterSpec ivSpec = new IvParameterSpec(iv); // etiqueta de autenticación de 16 bytes (128 bits)
 
         // Paso 3: Cifrar contenido de la factura con clave AES
-        Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
         aesCipher.init(Cipher.ENCRYPT_MODE, aesKey, ivSpec);
         byte[] facturaCifrada = aesCipher.doFinal(facturaBytes);
         // doFinal procesa cualquier bloque pendiente, aplica el padding, ejecuta el cifrado y devuelve el texto cifrado en bytes resultantes
@@ -51,33 +56,33 @@ public class EmpaquetarFactura {
         // Paso 4: Preparar la clave pública de Hacienda y cifrar la clave AES
         byte[] haciendaPubBytes = Files.readAllBytes(haciendaPublicKey); // cargamos la clave pública de Hacienda leyendo sus bytes
         X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(haciendaPubBytes); // convertimos los bytes en una clave pública X.509
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA", "BC");
         PublicKey haciendaPubKey = keyFactory.generatePublic(pubSpec); // generamos la clave pública de Hacienda
-        Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+        Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding", "BC");
         rsaCipher.init(Cipher.ENCRYPT_MODE, haciendaPubKey); // inicializamos el cifrado con la clave pública de Hacienda
-        byte[] aesEncryptedKey = rsaCipher.doFinal(aesKey.getEncoded()); // cifrar la clave AES con OAEP (Optimal Asymmetric Encryption Padding)
+        byte[] claveCifrada = rsaCipher.doFinal(aesKey.getEncoded()); // cifrar la clave AES con OAEP (Optimal Asymmetric Encryption Padding)
 
         // Paso 5: Firmar paquete con la clave privada de la Empresa
         byte[] empresaPrivBytes = Files.readAllBytes(empresaPrivateKey); // cargamos la clave privada de la Empresa leyendo sus bytes
         PKCS8EncodedKeySpec privSpec = new PKCS8EncodedKeySpec(empresaPrivBytes); // convertimos los bytes en una clave privada PKCS#8
         PrivateKey empresaPrivKey = keyFactory.generatePrivate(privSpec); // generamos la clave privada de la Empresa
-        Signature signature = Signature.getInstance("SHA512withRSA");
-        signature.initSign(empresaPrivKey); // inicializamos el firmador con la clave privada de la Empresa 
+        Signature signature = Signature.getInstance("SHA512withRSA", "BC");
+        signature.initSign(empresaPrivKey); // inicializamos el firmador con la clave privada de la Empresa
         signature.update(facturaCifrada); // actualizamos el firmador con el contenido crítico
-        signature.update(aesEncryptedKey); // actualizamos el firmador con la clave cifrada
+        signature.update(claveCifrada); // actualizamos el firmador con la clave cifrada
         byte[] firmaEmpresa = signature.sign(); // firmamos el contenido crítico
 
         // Paso 6: Construir el paquete con todos los bloques necesarios
         Paquete paqueteFactura = new Paquete();
         paqueteFactura.anadirBloque("FACTURA_CIFRADA", facturaCifrada);
-        paqueteFactura.anadirBloque("CLAVE_CIFRADA", aesEncryptedKey);
+        paqueteFactura.anadirBloque("CLAVE_CIFRADA", claveCifrada);
         paqueteFactura.anadirBloque("VECTOR_INICIALIZACION", iv);
         paqueteFactura.anadirBloque("FIRMA_EMPRESA", firmaEmpresa);
 
         // Paso 7: Guardar el paquete en disco
-        paqueteFactura.escribirPaquete(paquete.toString());
+        paqueteFactura.escribirPaquete(nombrePaquete.toString());
 
-        System.out.println("Factura empaquetada correctamente en " + paquete);
+        System.out.println("Factura empaquetada correctamente en " + nombrePaquete);
     }
 
     private static void mensajeAyuda() {
