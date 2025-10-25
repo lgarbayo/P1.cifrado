@@ -17,7 +17,7 @@ public class DesempaquetarFactura {
     Guarda factura en claro y muestra resultado
      */
 
-     public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         if (args.length != 5) {
             mensajeAyuda();
             System.exit(1);
