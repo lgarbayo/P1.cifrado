@@ -1,11 +1,11 @@
 import java.io.*;
 
 import java.security.*;
-import java.security.spec.*;
+//import java.security.spec.*;
 
-import javax.crypto.*;
-import javax.crypto.interfaces.*;
-import javax.crypto.spec.*;
+//import javax.crypto.*;
+//import javax.crypto.interfaces.*;
+//import javax.crypto.spec.*;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
