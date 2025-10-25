@@ -14,10 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Base64;
 
-/**
- *
- * @author ribadas
- */
 public class Paquete {
 
     private Map<String, Bloque> bloques;
