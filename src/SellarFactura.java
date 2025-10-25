@@ -81,9 +81,6 @@ public class SellarFactura {
         System.out.println("ÉXITO: Factura sellada correctamente y guardada en " + nombrePaquete);
     }
 
-    /*
-    Muestra la sintaxis correcta.
-    */
     public static void mensajeAyuda() {
         System.out.println("Sella una Factura Empaquetada por la Autoridad de Sellado.");
         System.out.println("\tSintaxis: java SellarFactura <nombre_paquete> <clave_publica_empresa> <clave_privada_autoridad>");
