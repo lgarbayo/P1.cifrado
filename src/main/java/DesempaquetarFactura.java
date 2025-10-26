@@ -59,7 +59,7 @@ public class DesempaquetarFactura {
 
         // Paso 1: Verificar la firma de la Autoridad de Sellado (integridad del sello de tiempo)
         byte[] mensajeAFirmarAutoridad = concatenarBytes(facturaCifrada, claveCifrada, selloTiempo); // concatenar todos los datos que la Autoridad firmó
-        Signature verificadorAutoridad = Signature.getInstance("SHA512withRSA", "BC"); // inicializar verificador con SHA-512 y RSA
+        Signature verificadorAutoridad = Signature.getInstance("SHA256withRSA", "BC"); // inicializar verificador con SHA-512 y RSA
         verificadorAutoridad.initVerify(clavePublicaAutoridad); // inicializar la verificación con la clave pública de la Autoridad
         verificadorAutoridad.update(mensajeAFirmarAutoridad); // actualizar el verificador con el mensaje original
         if (!verificadorAutoridad.verify(firmaAutoridad)) {
@@ -73,7 +73,7 @@ public class DesempaquetarFactura {
 
         // Paso 3: Verificar la firma de la Empresa
         byte[] mensajeFirmadoEmpresa = concatenarBytes(facturaCifrada, claveCifrada); // concatenar los datos que la Empresa firmó originalmente
-        Signature verificadorEmpresa = Signature.getInstance("SHA512withRSA", "BC"); // inicializar verificador con SHA-512 y RSA
+        Signature verificadorEmpresa = Signature.getInstance("SHA256withRSA", "BC"); // inicializar verificador con SHA-512 y RSA
         verificadorEmpresa.initVerify(clavePublicaEmpresa); // inicializar la verificación con la clave pública de la Empresa
         verificadorEmpresa.update(mensajeFirmadoEmpresa); // actualizar el verificador con el mensaje original
         if (!verificadorEmpresa.verify(firmaEmpresa)) {

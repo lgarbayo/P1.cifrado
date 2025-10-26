@@ -20,7 +20,7 @@ public class EmpaquetarFactura {
         - bloque con firma del paquete
     Guarda paquete en fichero
      */
-    
+
     public static void main(String[] args) throws Exception {
         if (args.length != 4) {
             mensajeAyuda();
@@ -57,7 +57,7 @@ public class EmpaquetarFactura {
         byte[] haciendaPubBytes = Files.readAllBytes(haciendaPublicKey); // cargamos la clave pública de Hacienda leyendo sus bytes
         X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(haciendaPubBytes); // convertimos los bytes en una clave pública X.509
         KeyFactory keyFactory = KeyFactory.getInstance("RSA", "BC");
-        PublicKey haciendaPubKey = keyFactory.generatePublic(pubSpec); // generamos la clave pública de Hacienda
+        PublicKey haciendaPubKey = keyFactory.generatePublic(pubSpec); // cargar la clave pública de Hacienda para cifrar la clave AES
         Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding", "BC");
         rsaCipher.init(Cipher.ENCRYPT_MODE, haciendaPubKey); // inicializamos el cifrado con la clave pública de Hacienda
         byte[] claveCifrada = rsaCipher.doFinal(aesKey.getEncoded()); // cifrar la clave AES con OAEP (Optimal Asymmetric Encryption Padding)
@@ -65,8 +65,8 @@ public class EmpaquetarFactura {
         // Paso 5: Firmar paquete con la clave privada de la Empresa
         byte[] empresaPrivBytes = Files.readAllBytes(empresaPrivateKey); // cargamos la clave privada de la Empresa leyendo sus bytes
         PKCS8EncodedKeySpec privSpec = new PKCS8EncodedKeySpec(empresaPrivBytes); // convertimos los bytes en una clave privada PKCS#8
-        PrivateKey empresaPrivKey = keyFactory.generatePrivate(privSpec); // generamos la clave privada de la Empresa
-        Signature signature = Signature.getInstance("SHA512withRSA", "BC");
+        PrivateKey empresaPrivKey = keyFactory.generatePrivate(privSpec); // cargar la clave privada de la Empresa para firmar
+        Signature signature = Signature.getInstance("SHA256withRSA", "BC");
         signature.initSign(empresaPrivKey); // inicializamos el firmador con la clave privada de la Empresa
         signature.update(facturaCifrada); // actualizamos el firmador con el contenido crítico
         signature.update(claveCifrada); // actualizamos el firmador con la clave cifrada

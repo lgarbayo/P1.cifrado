@@ -54,7 +54,7 @@ public class SellarFactura {
 
         // Verificar firma de la Empresa
         byte[] mensajeFirmadoEmpresa = concatenarBytes(facturaCifrada, claveCifrada); // concatenar factura cifrada y clave cifrada
-        Signature verificadorEmpresa = Signature.getInstance("SHA512withRSA", "BC");
+        Signature verificadorEmpresa = Signature.getInstance("SHA256withRSA", "BC");
         verificadorEmpresa.initVerify(clavePublicaEmpresa);
         verificadorEmpresa.update(mensajeFirmadoEmpresa);
         if (!verificadorEmpresa.verify(firmaEmpresa)) {
@@ -69,7 +69,7 @@ public class SellarFactura {
 
         // Paso 4: Firmar con la Autoridad
         byte[] mensajeAFirmarAutoridad = concatenarBytes(facturaCifrada, claveCifrada, selloTiempo);
-        Signature firmadorAutoridad = Signature.getInstance("SHA512withRSA", "BC");
+        Signature firmadorAutoridad = Signature.getInstance("SHA256withRSA", "BC");
         firmadorAutoridad.initSign(clavePrivadaAutoridad);
         firmadorAutoridad.update(mensajeAFirmarAutoridad);
         byte[] firmaAutoridad = firmadorAutoridad.sign();
