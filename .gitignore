@@ -33,7 +33,6 @@ bin/
 ### Java ###
 *.class
 
-target/
 *.jar
 .idea/
 *.iml
