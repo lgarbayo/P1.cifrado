@@ -1,7 +1,6 @@
 
 Práctica1. Uso del API de cifrado de Java
 
-Práctica1. Uso del API de cifrado de Java1. Objetivos2. Descripción2.1 Simplificaciones 2.2 Requisitos3. Desarrollo3.1 Actores3.2 Programas/módulos a desarrollar  4. Entrega5. Herramientas a utilizarCódigo de partida
 1. Objetivos
 
     Poner en práctica los conocimientos adquiridos respecto a algoritmos criptográficos
