@@ -1,0 +1,42 @@
+{
+  "factura": {
+    "numero": "2203",
+    "fecha": "2024-03-22",
+    "vencimiento": "2024-06-22",
+    "emisor": {
+      "nombre": "Empresa XYZ",
+      "direccion": "Calle Falsa 123, Ciudad, País",
+      "telefono": "+123456789",
+      "email": "contacto@empresaxyz.com"
+    },
+    "receptor": {
+      "nombre": "Juan Pérez",
+      "direccion": "Avenida Principal 456, Ciudad, País",
+      "telefono": "+987654321",
+      "email": "juan.perez@correo.com"
+    },
+    "items": [
+      {
+        "descripcion": "Servicio de Consultoría",
+        "cantidad": 2,
+        "precio_unitario": 100.0,
+        "total": 200.0
+      },
+      {
+        "descripcion": "Diseño de Página Web",
+        "cantidad": 1,
+        "precio_unitario": 300.0,
+        "total": 300.0
+      }
+    ],
+    "subtotal": 500.0,
+    "impuesto": {
+      "tipo": "IVA",
+      "porcentaje": 21,
+      "monto": 105.0
+    },
+    "total": 605.0,
+    "forma_pago": "Transferencia Bancaria",
+    "numero_cuenta": "1234-5678-9101-1121"
+  }
+}

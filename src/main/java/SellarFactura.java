@@ -82,7 +82,7 @@ public class SellarFactura {
     }
 
     public static void mensajeAyuda() {
-        System.out.println("Sella una Factura Empaquetada por la Autoridad de Sellado.");
+        System.out.println("Sella una Factura Empaquetada con un Sello de Tiempo y Firma de Autoridad.");
         System.out.println("\tSintaxis: java SellarFactura <nombre_paquete> <clave_publica_empresa> <clave_privada_autoridad>");
         System.out.println();
     }

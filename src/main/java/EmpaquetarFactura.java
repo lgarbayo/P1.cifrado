@@ -18,6 +18,7 @@ public class EmpaquetarFactura {
         - bloque con factura cifrada
         - bloque con clave AES cifrada
         - bloque con firma del paquete
+        - bloque con vector de inicialización (IV) dado que se usó modo CBC
     Guarda paquete en fichero
      */
 
@@ -32,7 +33,6 @@ public class EmpaquetarFactura {
         Path haciendaPublicKey = Paths.get(args[2]);
         Path empresaPrivateKey = Paths.get(args[3]);
 
-        // Registrar BouncyCastle como provider
         Security.addProvider(new BouncyCastleProvider());
 
         // Paso 1: Leer la factura JSON original
@@ -58,9 +58,9 @@ public class EmpaquetarFactura {
         X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(haciendaPubBytes); // convertimos los bytes en una clave pública X.509
         KeyFactory keyFactory = KeyFactory.getInstance("RSA", "BC");
         PublicKey haciendaPubKey = keyFactory.generatePublic(pubSpec); // cargar la clave pública de Hacienda para cifrar la clave AES
-        Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding", "BC");
+        Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC"); // inicializar cifrador RSA, PKCS1 es estándar para operaciones RSA
         rsaCipher.init(Cipher.ENCRYPT_MODE, haciendaPubKey); // inicializamos el cifrado con la clave pública de Hacienda
-        byte[] claveCifrada = rsaCipher.doFinal(aesKey.getEncoded()); // cifrar la clave AES con OAEP (Optimal Asymmetric Encryption Padding)
+        byte[] claveCifrada = rsaCipher.doFinal(aesKey.getEncoded()); // cifrar la clave AES
 
         // Paso 5: Firmar paquete con la clave privada de la Empresa
         byte[] empresaPrivBytes = Files.readAllBytes(empresaPrivateKey); // cargamos la clave privada de la Empresa leyendo sus bytes
@@ -82,11 +82,11 @@ public class EmpaquetarFactura {
         // Paso 7: Guardar el paquete en disco
         paqueteFactura.escribirPaquete(nombrePaquete.toString());
 
-        System.out.println("Factura empaquetada correctamente en " + nombrePaquete);
+        System.out.println("ÉXITO: Factura empaquetada correctamente en " + nombrePaquete);
     }
 
     private static void mensajeAyuda() {
-        System.out.println("Uso: EmpaquetarFactura <fichero JSON factura> <nombre paquete> <clave pública Hacienda> <clave privada Empresa>");
+        System.out.println("Empaqueta y firma una Factura para enviarla a Hacienda.");
         System.out.println("\tSintaxis:   java EmpaquetarFactura factura.json paquete.zip hacienda.publica empresa.privada");
         System.out.println();
     }

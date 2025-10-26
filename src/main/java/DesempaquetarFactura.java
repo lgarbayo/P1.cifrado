@@ -59,7 +59,7 @@ public class DesempaquetarFactura {
 
         // Paso 1: Verificar la firma de la Autoridad de Sellado (integridad del sello de tiempo)
         byte[] mensajeAFirmarAutoridad = concatenarBytes(facturaCifrada, claveCifrada, selloTiempo); // concatenar todos los datos que la Autoridad firmó
-        Signature verificadorAutoridad = Signature.getInstance("SHA256withRSA", "BC"); // inicializar verificador con SHA-512 y RSA
+        Signature verificadorAutoridad = Signature.getInstance("SHA256withRSA", "BC"); // inicializar verificador con SHA-256 y RSA
         verificadorAutoridad.initVerify(clavePublicaAutoridad); // inicializar la verificación con la clave pública de la Autoridad
         verificadorAutoridad.update(mensajeAFirmarAutoridad); // actualizar el verificador con el mensaje original
         if (!verificadorAutoridad.verify(firmaAutoridad)) {
@@ -73,7 +73,7 @@ public class DesempaquetarFactura {
 
         // Paso 3: Verificar la firma de la Empresa
         byte[] mensajeFirmadoEmpresa = concatenarBytes(facturaCifrada, claveCifrada); // concatenar los datos que la Empresa firmó originalmente
-        Signature verificadorEmpresa = Signature.getInstance("SHA256withRSA", "BC"); // inicializar verificador con SHA-512 y RSA
+        Signature verificadorEmpresa = Signature.getInstance("SHA256withRSA", "BC"); // inicializar verificador con SHA-256 y RSA
         verificadorEmpresa.initVerify(clavePublicaEmpresa); // inicializar la verificación con la clave pública de la Empresa
         verificadorEmpresa.update(mensajeFirmadoEmpresa); // actualizar el verificador con el mensaje original
         if (!verificadorEmpresa.verify(firmaEmpresa)) {
@@ -81,8 +81,8 @@ public class DesempaquetarFactura {
             System.exit(1);
         }
 
-        // Paso 4: Descifrar la clave simétrica AES con la clave privada de Hacienda usando RSA/OAEP
-        Cipher descifradorRSA = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding", "BC"); // inicializar descifrador RSA con OAEP
+        // Paso 4: Descifrar la clave simétrica AES con la clave privada de Hacienda usando RSA
+        Cipher descifradorRSA = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC"); // inicializar descifrador RSA, PKCS1 es estándar para operaciones RSA
         descifradorRSA.init(Cipher.DECRYPT_MODE, clavePrivadaHacienda); // modo descifrado con la clave privada de Hacienda
         byte[] claveAESDescifrada = descifradorRSA.doFinal(claveCifrada); // descifrar la clave AES
         SecretKey claveSimetrica = new SecretKeySpec(claveAESDescifrada, "AES"); // construir objeto SecretKey a partir de los bytes descifrados
@@ -97,11 +97,11 @@ public class DesempaquetarFactura {
         // Paso 6: Guardar la factura descifrada en el archivo de salida
         Files.write(Paths.get(facturaJson), facturaClaro.getBytes("UTF-8"));
 
-        System.out.println("Descifrado completo. Factura original guardada en: " + facturaJson);
+        System.out.println("ÉXITO: Descifrado completo. Factura original guardada en: " + facturaJson);
     }
 
     public static void mensajeAyuda() {
-        System.out.println("Desempaqueta y verifica una Factura Sellada en Hacienda.");
+        System.out.println("Desempaqueta y verifica una Factura Sellada.");
         System.out.println("\tSintaxis: java DesempaquetarFactura <paquete_sellado> <fichero_json_salida> <clave_privada_hacienda> <clave_publica_empresa> <clave_publica_autoridad>");
         System.out.println();
     }
