@@ -142,60 +142,6 @@ Una vez decidido cómo garantizar los requisitos exigidos, el resultado final se
 
                 una vez verificado que la Empresa que generó el ”paquete” es quien realmente corresponde, se descifrará la Factura enviada y se almacenará en el fichero indicado el texto JSON en claro incluido originalmente por la Empresa en su Factura Empaquetada
 
-4. Entrega
-
-    Práctica individual o en parejas
-
-    Documentación a entregar:
-
-        Memoria
-        Contendrá al menos los siguiente puntos
-
-            Descripción breve de la práctica
-
-            Descripción y justificación de las estrategias criptográficas empleadas para asegurar los requisitos básicos exigidos, junto con los pasos que se siguen en el empaquetado, sellado y desempaquetado de la Factura. [Importante]
-
-            Descripción del formato/estructura del ”paquete” resultante
-
-            Descripción breve de la implementación: clases y métodos más importantes.
-
-            Instrucciones de compilación y ejemplos de uso. 
-            Debe incluir un ejemplo de ejecución (comandos + salida obtenida) de los siguientes casos de prueba: [Importante]
-
-                Recepción de una  Factura Empaquetada correcta
-
-                Recepción de una  Factura Empaquetada con los contenidos aportados por la Empresa alterados
-
-                Recepción de una  Factura Empaquetada con un sello de tiempo alterado
-
-                Uso por parte de Hacienda de una clave pública de Empresa incorrecta
-
-            Explicación de las simplificaciones realizadas (las descritas en apartado "2.1 Simplificaciones" y otras adicionales), junto con sus consecuencias en una aplicación real. [Importante]    
-
-            Resultados obtenidos y conclusiones
-
-        Código fuente + ficheros para los casos de prueba indicados en el punto 5.  
-
-            Aviso importante:  
-            Salvo razones debidamente justificadas en la documentación (uso de otros lenguajes de programación o similares), los ejecutables desarrollados deben de seguir las restricciones respecto a nombre, parámetros de línea de comandos y orden de los mismos especificadas en la sección "3.1 Programas a desarrollar" 
-
-        Del mismo modo, los datos aportados por Empresa y Autoridad de sellado han de al almacenarse en el ”Paquete” creado.
-
-    Fecha de entrega: por determinar (~ segunda mitad de octubre)
-
-    Entrega en MOOVI (un único archivo con documentación, código, etc)  [evitar incluir el .JAR de BouncyCastle y ficheros .class]
-
-    Defensa: esta previsto que alrededor de un 10%-15% de las prácticas entregadas en tiempo y forma serán seleccionadas para una pequeña defensa (5-10 min.) ante el profesor
-
-        fundamentalmente serán prácticas con dudas de funcionamiento o implementación, aquellas que presentes dudas en cuanto a su autoría o entregas elegidas al azar
-
-        la defensa se realizará bien en horario de laboratorio o en horario de tutorias (se acordará con cada grupo)
-
-    Evaluación:
-
-        Documentación correcta + empaquetado básico (Factura de la Empresa) y validación/descifrado por Hacienda: hasta 70%
-
-        Adición de la generación y validación de los ”sellos de tiempo” de la Autoridad sellado: hasta 100%
 
 5. Herramientas a utilizar
 
@@ -206,25 +152,5 @@ La práctica se implementará en Java utilizando el API de criptografía JCA y e
     Paquete de criptografia Bouncy Castle (JCA provider)
 
     Tutorial del API JCA (Java Cryptography Architecture) 
-
-Código de partida
-
-    GenerarClaves.java: genera un par de claves RSA de 512 bits    
-
-        Implementación del primer ejecutable descrito en la subsección 3.1 Programas a desarrollar
-
-    Paquete.java : encapsula un paquete formado por varios bloques. Cada boque tiene un nombre (de tipo String) y un contenido (de tipo byte[]).  
-
-        La clase provee de métodos para añadir, listar y eliminar los bloques que conforman el paquete y recuperar su contenido (byte[]).
-
-        Métodos a utilizar: getContenidoBloque(), anadirBloque(), actualizarBloque(),   eliminarBloque(), getNombresBloque()
-
-        También provee métodos para las operaciones de lectura y escritura de paquetes empleando un formato similar al PGP ASCII armor (ver ) que usa la codificación Base64 para representar datos binarios mediante caracteres imprimibles.
-
-        Métodos: leerPaquete(String nombreFichero), escribirPaquete(String nombreFichero) y constructor de conveniencia Paquete(String nombreFichero)
-
-        En el método main() se proporciona un ejemplo de creación, acceso, escritura y lectura de Paquetes.
-
-    factura2203.json: Ejemplo de factura en formato JSON 
 
 						
